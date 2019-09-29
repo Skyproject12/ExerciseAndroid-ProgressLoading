@@ -36,19 +36,27 @@ public class MainActivity extends AppCompatActivity implements HandlerCallback {
         setContentView(R.layout.activity_main);
         progressBar= findViewById(R.id.progress_bar);
 
+
+        // mengirim status progress
         Intent intent= new Intent(MainActivity.this, DataManagerService.class);
         activityMessage= new Messenger(new IncomingHandler(this));
         intent.putExtra(DataManagerService.ACTIVITY_HANDLER, activityMessage);
 
+
+        // menjalankan service
         bindService(intent, serviceConnection, BIND_AUTO_CREATE);
     }
 
+
+    // menghancurkan service ketika selesai
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unbindService(serviceConnection);
     }
 
+
+    // melakukan pengecekan koneksi
     private ServiceConnection serviceConnection= new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -62,16 +70,22 @@ public class MainActivity extends AppCompatActivity implements HandlerCallback {
         }
     };
 
+
+    // ketika proses akan dimulai
     @Override
     public void preparation() {
         Toast.makeText(this, "Memulai memuat data", Toast.LENGTH_SHORT).show();
     }
 
+
+    // ketika proses akan diupdate
     @Override
     public void updateProgress(long progress) {
         progressBar.setProgress((int) progress);
     }
 
+
+    // ketika proses success
     @Override
     public void loadSucces() {
         Toast.makeText(this, "Berhasil", Toast.LENGTH_SHORT).show();
@@ -79,6 +93,8 @@ public class MainActivity extends AppCompatActivity implements HandlerCallback {
         finish();
     }
 
+
+    // ketika proses failed
     @Override
     public void loadFailed() {
         Toast.makeText(this, "Gagal", Toast.LENGTH_SHORT).show();
@@ -92,18 +108,27 @@ public class MainActivity extends AppCompatActivity implements HandlerCallback {
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
+            // menerima message dari service melalui media messanger
             switch (msg.what){
+
+                // ketika status message PREPARE
                 case PREPARATION_MESSAGE:
                     weakCallback.get().preparation();
                     break;
+
+                    // ketika status message update
                 case UPDATE_MESSAGE:
                     Bundle bundle= msg.getData();
                     long progress= bundle.getLong("KEY_PROGRESS");
                     weakCallback.get().updateProgress(progress);
                     break;
+
+                    // ketika status message success
                 case 2:
                     weakCallback.get().loadSucces();
                     break;
+
+                    // ketika status message failed
                 case FAILED_MESSAGE :
                     weakCallback.get().loadFailed();
                     break;

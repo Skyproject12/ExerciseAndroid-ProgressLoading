@@ -23,9 +23,12 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
     private WeakReference<LoadDataCallback> weakCallback;
     // digunakan ketika akn menggunakan resource
     private WeakReference<Resources> weakResounrce;
+    // give status progress
     double progress;
     double maxprogress= 100;
 
+
+    // make cosntructor
     public LoadDataAsync(MahasiswaHelper mahasiswaHelper, AppPreference appPreference, LoadDataCallback weakCallback, Resources weakResounrce) {
         this.mahasiswaHelper = mahasiswaHelper;
         this.appPreference = appPreference;
@@ -33,22 +36,36 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
         this.weakResounrce = new WeakReference<>(weakResounrce);
     }
 
+
+    // proses loading
     @Override
     protected Boolean doInBackground(Void... voids) {
         Boolean firstRun= appPreference.getFirstRun();
         if(firstRun){
+
+            // make arraylist type MahasiswaModel
             ArrayList<MahasiswaModel> mahasiswaModels= preLoadRaw();
             mahasiswaHelper.open();
 
+
+            // make progress 30
             progress= 30;
             publishProgress((int)progress);
             Double progressMaxInsert= 80.0;
+
+            // give change progress
             Double progressDiff= (progressMaxInsert - progress) / mahasiswaModels.size();
             boolean insertSuccess;
             try {
+                // melakukan perulangan ketika memasukkan ke sqlite
                 for(MahasiswaModel model: mahasiswaModels){
+
+                    // memasukkan ke dalam sqlite
                     mahasiswaHelper.insert(model);
+
+                    // setiap melakukan progress akan menambah progressdiff
                     progress += progressDiff;
+                    // menampilka  progress
                     publishProgress((int) progress);
                 }
                 insertSuccess= true;
@@ -57,16 +74,30 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
             catch (Exception e){
                 insertSuccess= false;
             }
+
+            // menutup helper
             mahasiswaHelper.close();
+
+            // tampilkan progress seratus persen
             publishProgress((int)maxprogress);
+
+            // membuat status insert true
             return insertSuccess;
         }
+
+        // selain hal tersebut
         else{
             try {
                 synchronized (this) {
+
+                    // menunggu dua detik
                     this.wait(2000);
+
+                    // menmpilkan progress limapuluh persen
                     publishProgress(50);
                     this.wait(2000);
+
+                    // menuggul lalu menampikan progress seartus persen
                     publishProgress((int)maxprogress);
                     return true;
                 }
@@ -81,13 +112,19 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
     protected void onPostExecute(Boolean aBoolean) {
         super.onPostExecute(aBoolean);
         if(aBoolean){
+
+            // load success maka akan memanggil interface onLoadSuccess
             weakCallback.get().onLoadSuccess();
         }
         else {
+
+            // jika failed akan memanggil interface  onLoadFailed
             weakCallback.get().onLoadFailed();
         }
     }
 
+
+    // berfunsgi untuk mengambil file dari dalam android
     private ArrayList<MahasiswaModel> preLoadRaw() {
         ArrayList<MahasiswaModel> mahasiswaModels= new ArrayList<>();
         String line;
@@ -102,11 +139,14 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
                 String [] spliststr= line.split("\t");
                 MahasiswaModel mahasiswaModel;
                 mahasiswaModel= new MahasiswaModel(spliststr[0], spliststr[1]);
+                // menampung file ke dalam arraylist
                 mahasiswaModels.add(mahasiswaModel);
             }while (line != null);
         }catch (Exception e){
             e.printStackTrace();
         }
+
+        // mengembalikan nilai dari arraylist
         return mahasiswaModels;
     }
 

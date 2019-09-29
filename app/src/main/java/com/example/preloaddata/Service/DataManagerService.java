@@ -28,15 +28,28 @@ public class DataManagerService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+        // getParcable from messanger
         activityMessanger= intent.getParcelableExtra(ACTIVITY_HANDLER);
-        loadData.execute();
+
+        // jalankan  asyntask
+        loadData.execute(); // akan dijalankan ketika activity sudah mengikat service
+
+        // kembalikan nilai message
         return activityMessanger.getBinder();
     }
+
+    // call interface
     LoadDataCallback callback= new LoadDataCallback() {
+
+        // if method onPreload
         @Override
         public void onPreload() {
+
+            // prepare load status
             Message message= Message.obtain(null, PREPARATION_MESSAGE);
             try {
+
+                // send status message
                 activityMessanger.send(message);;
             }
             catch (RemoteException e){
@@ -44,13 +57,17 @@ public class DataManagerService extends Service {
             }
         }
 
+
+        // update message
         @Override
         public void onProgressUpdate(long progress) {
             try {
                 Message message= Message.obtain(null, UPDATE_MESSAGE);
                 Bundle bundle= new Bundle();
+                // put extra bundle progress
                 bundle.putLong("KEY_PROGRESS", progress);
                 message.setData(bundle);
+                // send status message
                 activityMessanger.send(message);
             }
             catch (RemoteException e){
@@ -58,10 +75,14 @@ public class DataManagerService extends Service {
             }
         }
 
+
+        // success message
         @Override
         public void onLoadSuccess() {
             Message message= Message.obtain(null, SUCCESS_MESSAGE);
             try {
+
+                // send status message
                 activityMessanger.send(message);
             }
             catch (RemoteException e){
@@ -69,10 +90,14 @@ public class DataManagerService extends Service {
             }
         }
 
+
+        // failed message
         @Override
         public void onLoadFailed() {
             Message message= Message.obtain(null, FAILED_MESSAGE);
             try {
+
+                //send message
                 activityMessanger.send(message);
             }
             catch (RemoteException e){
@@ -81,15 +106,22 @@ public class DataManagerService extends Service {
         }
     };
 
+
+    // in oncreate
     @Override
     public void onCreate() {
         super.onCreate();
+        // berfungsi mengambil kelas helper maupun preference yang nantinya akan diperbarui untuk di check kembali di async
         MahasiswaHelper mahasiswaHelper= MahasiswaHelper.getInstance(getApplicationContext());
         AppPreference appPreference= new AppPreference(getApplicationContext());
+
+        // get mahasiswahelper , prefernce
         loadData= new LoadDataAsync(mahasiswaHelper, appPreference, callback, getResources());
         Log.d(TAG, "onCreate: ");
     }
 
+
+    // destroy service
     @Override
     public void onDestroy() {
         super.onDestroy();

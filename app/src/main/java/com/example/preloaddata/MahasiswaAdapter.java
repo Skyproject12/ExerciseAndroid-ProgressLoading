@@ -16,9 +16,13 @@ public class MahasiswaAdapter extends RecyclerView.Adapter<MahasiswaAdapter.Maha
 
     private ArrayList<MahasiswaModel> list= new ArrayList<>();
 
+
+    // comnstructor
     public MahasiswaAdapter() {
     }
 
+
+    // set adapter di main activity lalu beri notifychange untuk membuat request jika terdapat perubaan
     public void setData(ArrayList<MahasiswaModel> list){
         if (list.size() >0){
             this.list.clear();

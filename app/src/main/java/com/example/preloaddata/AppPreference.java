@@ -12,7 +12,10 @@ public class AppPreference {
         prefs= context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
+
+    // menampung ke dalam prepernces status load progress
     public void setFirstRun(Boolean input){
+        // menentukan status apakah sudah menampung hasil file atau belum
         SharedPreferences.Editor editor= prefs.edit();
         editor.putBoolean(APP_FIRST_RUN, input);
         editor.apply();

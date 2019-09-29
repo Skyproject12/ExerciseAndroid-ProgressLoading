@@ -32,6 +32,8 @@ public class MahasiswaActivity extends AppCompatActivity {
         ArrayList<MahasiswaModel> mahasiswaModels= mahasiswaHelper.getAllData();
         mahasiswaHelper.close();
 
+
+        // set adapter mahasiswamodel arraylist
         mahasiswaAdapter.setData(mahasiswaModels);
     }
 }
