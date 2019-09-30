@@ -12,16 +12,20 @@ import android.util.Log;
 import com.example.preloaddata.AppPreference;
 import com.example.preloaddata.database.MahasiswaHelper;
 
+// dengan bantuan message segala sesuatu yang terjadi di loaddataasync dapat diteruskan ke activity
+
 public class DataManagerService extends Service {
 
     public static final int PREPARATION_MESSAGE=0;
     public static final int UPDATE_MESSAGE=1;
     public final int SUCCESS_MESSAGE=2;
     public static final int FAILED_MESSAGE=3;
+    public static final int CANCEL_MESSAGE=4;
     public static final String ACTIVITY_HANDLER="activity_handler";
 
     private String TAG= DataManagerService.class.getSimpleName();
     private LoadDataAsync loadData;
+    // berfungsi menghubungkan service dengan suatu activity
     private Messenger activityMessanger;
     public DataManagerService() {
     }
@@ -104,6 +108,18 @@ public class DataManagerService extends Service {
                 e.printStackTrace();
             }
         }
+
+        // mengirim status ke main berupa status cancel denagan menggunakan messanger
+        @Override
+        public void onLoadCancel() {
+            Message message= Message.obtain(null, CANCEL_MESSAGE);
+            try {
+                activityMessanger.send(message);
+            }
+            catch (RemoteException e){
+                e.printStackTrace();
+            }
+        }
     };
 
 
@@ -125,11 +141,13 @@ public class DataManagerService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        loadData.cancel(true);
         Log.d(TAG, "onDestroy");
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
+        loadData.cancel(true);
         return super.onUnbind(intent);
     }
 

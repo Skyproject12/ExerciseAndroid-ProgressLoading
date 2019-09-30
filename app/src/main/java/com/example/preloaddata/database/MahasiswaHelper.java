@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteStatement;
 
 import java.util.ArrayList;
 
@@ -16,13 +17,35 @@ import static com.example.preloaddata.database.DatabaseContract.TABLE_NAME;
 
 public class MahasiswaHelper {
 
-
     // call database helper
     private DatabaseHelper databaseHelper;
     private static MahasiswaHelper INSTANCE;
     private SQLiteDatabase database;
     public MahasiswaHelper (Context context){
         databaseHelper= new DatabaseHelper(context);
+    }
+
+
+    public void beginTransaction(){
+        database.beginTransaction();
+    }
+
+    public void setTransactionSuccess(){
+        database.setTransactionSuccessful();
+    }
+
+    public void endTransaction(){
+        database.endTransaction();
+    }
+
+    public void insertTransaction(MahasiswaModel mahasiswaModel){
+        String sql= "INSERT INTO " + TABLE_NAME + " ("+NAMA+", "+NIM
+                +") VALUES (?, ?)";
+        SQLiteStatement statement= database.compileStatement(sql);
+        statement.bindString(1, mahasiswaModel.getName());
+        statement.bindString(2, mahasiswaModel.getNim());
+        statement.execute();
+        statement.clearBindings();
     }
 
     // call instance

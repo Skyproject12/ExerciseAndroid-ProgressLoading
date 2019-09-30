@@ -20,7 +20,7 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
     private MahasiswaHelper mahasiswaHelper;
     private AppPreference appPreference;
     // ketika akan mengunkan interface loadDatacallback
-    private WeakReference<LoadDataCallback> weakCallback;
+    private WeakReference<LoadDataCallback> weakCallback; // weakreference berfungsi menghubungkan service dengan suatu data
     // digunakan ketika akn menggunakan resource
     private WeakReference<Resources> weakResounrce;
     // give status progress
@@ -30,6 +30,7 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
 
     // make cosntructor
     public LoadDataAsync(MahasiswaHelper mahasiswaHelper, AppPreference appPreference, LoadDataCallback weakCallback, Resources weakResounrce) {
+        // weakreference akan memperbarui data sesuai dengan inputan
         this.mahasiswaHelper = mahasiswaHelper;
         this.appPreference = appPreference;
         this.weakCallback = new WeakReference<>(weakCallback);
@@ -41,6 +42,8 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
     @Override
     protected Boolean doInBackground(Void... voids) {
         Boolean firstRun= appPreference.getFirstRun();
+
+        // jika first run true maka akan melakukan insert ke dalam databse
         if(firstRun){
 
             // make arraylist type MahasiswaModel
@@ -54,25 +57,47 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
             Double progressMaxInsert= 80.0;
 
             // give change progress
-            Double progressDiff= (progressMaxInsert - progress) / mahasiswaModels.size();
+            Double progressDiff= (progressMaxInsert - progress) / mahasiswaModels.size(); // akan membuat progress bertambah sebanyak jumlah dari arraylist
             boolean insertSuccess;
             try {
+                // memanggil kode untuk menerima treansaction
+                mahasiswaHelper.beginTransaction();
                 // melakukan perulangan ketika memasukkan ke sqlite
                 for(MahasiswaModel model: mahasiswaModels){
 
-                    // memasukkan ke dalam sqlite
-                    mahasiswaHelper.insert(model);
+                    if(isCancelled()){
+                        // ketika menjalankan proses namun pengguna membatalkan proses
+                        weakCallback.get().onLoadCancel();
+                        break;
+                    }
+                    else {
+                        // memasukkan ke dalam sqlite menggunakan insertTransaction
+                        mahasiswaHelper.insertTransaction(model);
 
-                    // setiap melakukan progress akan menambah progressdiff
-                    progress += progressDiff;
-                    // menampilka  progress
-                    publishProgress((int) progress);
+                        // setiap melakukan progress akan menambah progressdiff
+                        progress += progressDiff;
+                        // menampilka  progress
+                        publishProgress((int) progress);
+                    }
                 }
-                insertSuccess= true;
-                appPreference.setFirstRun(false);
+                if (isCancelled()){
+                    insertSuccess=false;
+                    // mengeset staus first run true
+                    appPreference.setFirstRun(true);
+                    weakCallback.get().onLoadCancel();
+                }
+                else {
+                    mahasiswaHelper.setTransactionSuccess();
+                    insertSuccess = true;
+                    // ketika success insert
+                    appPreference.setFirstRun(false);
+                }
             }
             catch (Exception e){
                 insertSuccess= false;
+            }
+            finally {
+                mahasiswaHelper.endTransaction();
             }
 
             // menutup helper
@@ -87,6 +112,7 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
 
         // selain hal tersebut
         else{
+            // hanya akan melakukan proses loading
             try {
                 synchronized (this) {
 
@@ -108,6 +134,8 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
         }
     }
 
+
+    // menjalalankan proses  dengan response tertentu
     @Override
     protected void onPostExecute(Boolean aBoolean) {
         super.onPostExecute(aBoolean);
@@ -133,10 +161,13 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
             Resources resources= weakResounrce.get();
             // berfungsi mengakses dan menulis file di android
             InputStream raw_dict= resources.openRawResource(R.raw.data_mahasiswa);
+            // mengambil data_mahasiswa kemudian akan di parse
             reader= new BufferedReader(new InputStreamReader(raw_dict));
             do {
                 line= reader.readLine();
+                // mengamnbil dan mebaca data berdasarkan tab dari data
                 String [] spliststr= line.split("\t");
+                // nilai nama dan id akan di gunakan untuk data dalam mahassiwamodel
                 MahasiswaModel mahasiswaModel;
                 mahasiswaModel= new MahasiswaModel(spliststr[0], spliststr[1]);
                 // menampung file ke dalam arraylist
@@ -150,6 +181,8 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
         return mahasiswaModels;
     }
 
+
+    // melakukan persiapan exsekusi
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
@@ -157,6 +190,8 @@ public class LoadDataAsync extends AsyncTask<Void, Integer, Boolean> {
         weakCallback.get().onPreload();
     }
 
+
+    // melakukan update data terbaru
     @Override
     protected void onProgressUpdate(Integer... values) {
         super.onProgressUpdate(values);

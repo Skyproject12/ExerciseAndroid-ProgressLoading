@@ -18,6 +18,7 @@ import com.example.preloaddata.Service.DataManagerService;
 
 import java.lang.ref.WeakReference;
 
+import static com.example.preloaddata.Service.DataManagerService.CANCEL_MESSAGE;
 import static com.example.preloaddata.Service.DataManagerService.FAILED_MESSAGE;
 import static com.example.preloaddata.Service.DataManagerService.PREPARATION_MESSAGE;
 import static com.example.preloaddata.Service.DataManagerService.UPDATE_MESSAGE;
@@ -99,6 +100,12 @@ public class MainActivity extends AppCompatActivity implements HandlerCallback {
     public void loadFailed() {
         Toast.makeText(this, "Gagal", Toast.LENGTH_SHORT).show();
     }
+
+    @Override
+    public void loadCancel() {
+        Toast.makeText(this, "load cancel", Toast.LENGTH_SHORT).show();
+    }
+
     private static class IncomingHandler extends Handler {
         WeakReference<HandlerCallback> weakCallback;
         IncomingHandler(HandlerCallback callback){
@@ -132,14 +139,22 @@ public class MainActivity extends AppCompatActivity implements HandlerCallback {
                 case FAILED_MESSAGE :
                     weakCallback.get().loadFailed();
                     break;
+                    // berfungsi untuk menampilkan response ketika status CANCEL
+                case CANCEL_MESSAGE:
+                    // menampilkan response berdasarkan interface
+                    weakCallback.get().loadCancel();
+                    break;
             }
         }
     }
 }
 
+
+// menangkap hasil status dari service
 interface HandlerCallback{
     void preparation();
     void updateProgress(long progress);
     void loadSucces();
     void loadFailed();
+    void loadCancel();
 }
